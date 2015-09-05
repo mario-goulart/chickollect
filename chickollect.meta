@@ -1,0 +1,6 @@
+;; -*- scheme -*-
+((synopsis "Simple system monitors")
+ (author "Mario Domenech Goulart")
+ (category tools)
+ (license "BSD")
+ (platform linux))

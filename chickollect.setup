@@ -1,0 +1,8 @@
+;; -*- scheme -*-
+(compile -d0 -O3 -J -s chickollect.scm)
+(compile -d0 -O3 -s chickollect.import.scm)
+
+(install-extension
+ 'chickollect
+ '("chickollect.so" "chickollect.import.so")
+ '((version "0.0.1")))
