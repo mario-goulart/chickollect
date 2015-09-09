@@ -134,17 +134,19 @@
 ;;; Battery
 ;;;
 (define (battery-status)
-  (map (lambda (battery-dir)
-         (let* ((status-file (make-pathname battery-dir "status"))
-                (status
-                 (and (file-read-access? status-file)
-                      (with-input-from-file status-file read)))
-                (capacity-file (make-pathname battery-dir "capacity"))
-                (capacity
-                 (and (file-read-access? capacity-file)
-                      (with-input-from-file capacity-file read))))
-           (cons status capacity)))
-       (glob "/sys/class/power_supply/BAT*")))
+  (if (file-read-access? "/sys/class/power_supply")
+      (map (lambda (battery-dir)
+             (let* ((status-file (make-pathname battery-dir "status"))
+                    (status
+                     (and (file-read-access? status-file)
+                          (with-input-from-file status-file read)))
+                    (capacity-file (make-pathname battery-dir "capacity"))
+                    (capacity
+                     (and (file-read-access? capacity-file)
+                          (with-input-from-file capacity-file read))))
+               (cons status capacity)))
+           (glob "/sys/class/power_supply/BAT*"))
+      '()))
 
 ;;;
 ;;; Network
