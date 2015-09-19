@@ -92,9 +92,7 @@ A list of `(<dev> <bytes sent> <bytes received>)`, where:
 
 ### Configuration
 
-`collect-loop` accepts an alist with configuration data.
-
-The following options are handled:
+`collect-loop` accepts the following keyword parameters:
 
 * `time-format`: a string to be given to `time->string`.  Default: `"%T"`.
 

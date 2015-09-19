@@ -193,40 +193,36 @@
 ;;;
 ;;; Collect loop
 ;;;
-(define (collect-loop handler #!key (conf '()))
-  (let* ((conf-val (lambda (field default)
-                     (alist-ref field conf eqv? default)))
-         (time-format (conf-val 'time-format "%T"))
-         (date-format (conf-val 'date-format "%F"))
-         (collect-interval (conf-val 'collect-interval 1))
-         (monitors
-          (conf-val 'monitors
-                    '(memory cpu date time battery network))))
-    (let loop ()
-      (let ((data
-             (let loop-monitors ((monitors monitors))
-               (if (null? monitors)
-                   '()
-                   (let ((monitor (car monitors)))
-                     (cons
-                      (cons monitor
-                            (case monitor
-                              ((memory)
-                               (memory-in-use (parse-meminfo)))
-                              ((date)
-                               (time->string (seconds->local-time) date-format))
-                              ((time)
-                               (time->string (seconds->local-time) time-format))
-                              ((cpu)
-                               (cpus-usage))
-                              ((battery)
-                               (battery-status))
-                              ((network)
-                               (netdev-stats collect-interval))
-                              (else (error 'collect-loop "Invalid monitor" monitor))))
-                      (loop-monitors (cdr monitors))))))))
-        (handler data))
+(define (collect-loop handler #!key (time-format "%T")
+                                    (date-format "%F")
+                                    (collect-interval 1)
+                                    (monitors
+                                     '(memory cpu date time battery network)))
+  (let loop ()
+    (let ((data
+           (let loop-monitors ((monitors monitors))
+             (if (null? monitors)
+                 '()
+                 (let ((monitor (car monitors)))
+                   (cons
+                    (cons monitor
+                          (case monitor
+                            ((memory)
+                             (memory-in-use (parse-meminfo)))
+                            ((date)
+                             (time->string (seconds->local-time) date-format))
+                            ((time)
+                             (time->string (seconds->local-time) time-format))
+                            ((cpu)
+                             (cpus-usage))
+                            ((battery)
+                             (battery-status))
+                            ((network)
+                             (netdev-stats collect-interval))
+                            (else (error 'collect-loop "Invalid monitor" monitor))))
+                    (loop-monitors (cdr monitors))))))))
+      (handler data))
       (sleep collect-interval)
-      (loop))))
+      (loop)))
 
 ) ;; end module
