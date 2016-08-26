@@ -3,6 +3,11 @@
 (import chicken scheme)
 (use extras data-structures files posix srfi-1 utils)
 
+;; Faster than SRFI-13's
+(define (string-prefix? prefix str)
+  (let ((idx (substring-index prefix str)))
+    (and idx (fx= idx 0))))
+
 ;;;
 ;;; CPU usage statistics
 ;;;
@@ -22,7 +27,7 @@
 (define num-cpus
   (let ((cpuinfo (read-lines "/proc/cpuinfo")))
     (count (lambda (line)
-             (substring=? "processor\t" line))
+             (string-prefix? "processor\t" line))
            cpuinfo)))
 
 (define cpu-stats (make-vector num-cpus #f))
@@ -58,7 +63,7 @@
       (unless (or (fx> cpuno num-cpus)
                   (null? lines))
         (let ((line (car lines)))
-          (if (substring=? (conc "cpu" cpuno) line)
+          (if (string-prefix? (conc "cpu" cpuno) line)
               (let ((prev (let ((p (vector-ref cpu-stats cpuno)))
                             (and p (cdr p))))
                     (cur (apply make-cpu-stat
@@ -93,19 +98,19 @@
                    (string->number (cadr (string-split line))))))
     (for-each
      (lambda (line)
-       (cond ((substring=? "MemTotal:" line)
+       (cond ((string-prefix? "MemTotal:" line)
               (meminfo-total-set! meminfo (get-val line)))
-             ((substring=? "MemFree:" line)
+             ((string-prefix? "MemFree:" line)
               (meminfo-free-set! meminfo (get-val line)))
-             ((substring=? "Buffers:" line)
+             ((string-prefix? "Buffers:" line)
               (meminfo-buffers-set! meminfo (get-val line)))
-             ((substring=? "Cached:" line)
+             ((string-prefix? "Cached:" line)
               (meminfo-cached-set! meminfo (get-val line)))
-             ((substring=? "Cached:" line)
+             ((string-prefix? "Cached:" line)
               (meminfo-cached-set! meminfo (get-val line)))
-             ((substring=? "SwapTotal:" line)
+             ((string-prefix? "SwapTotal:" line)
               (meminfo-swap-total-set! meminfo (get-val line)))
-             ((substring=? "SwapFree:" line)
+             ((string-prefix? "SwapFree:" line)
               (meminfo-swap-free-set! meminfo (get-val line)))))
      lines)
     meminfo))
