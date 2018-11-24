@@ -1,0 +1,9 @@
+;;; chickollect.egg -*- scheme -*-
+
+((synopsis "Simple system monitors")
+ (author "Mario Domenech Goulart")
+ (category tools)
+ (license "BSD")
+ (platform linux)
+ (dependencies srfi-1)
+ (components (extension chickollect)))

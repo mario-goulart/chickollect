@@ -1,7 +1,22 @@
 (module chickollect (collect-loop)
 
-(import chicken scheme)
-(use extras data-structures files posix srfi-1 utils)
+(import scheme)
+(cond-expand
+ (chicken-4
+  (import chicken)
+  (use extras data-structures files posix srfi-1 utils)
+  (define file-readable? file-read-access?))
+ (chicken-5
+  (import (chicken base)
+          (chicken file)
+          (chicken fixnum)
+          (chicken io)
+          (chicken pathname)
+          (chicken string)
+          (chicken time posix))
+  (import srfi-1))
+ (else
+  (error "Unsupported CHICKEN version.")))
 
 ;; Faster than SRFI-13's
 (define (string-prefix? prefix str)
@@ -25,7 +40,7 @@
   guest-nice)
 
 (define num-cpus
-  (let ((cpuinfo (read-lines "/proc/cpuinfo")))
+  (let ((cpuinfo (with-input-from-file "/proc/cpuinfo" read-lines)))
     (count (lambda (line)
              (string-prefix? "processor\t" line))
            cpuinfo)))
@@ -57,7 +72,7 @@
            cur-total))))
 
 (define (parse-cpu-stat!)
-  (let ((stat-data (read-lines "/proc/stat")))
+  (let ((stat-data (with-input-from-file "/proc/stat" read-lines)))
     (let loop ((cpuno 0)
                (lines stat-data))
       (unless (or (fx> cpuno num-cpus)
@@ -92,7 +107,7 @@
 (define-record meminfo total free buffers cached swap-total swap-free)
 
 (define (parse-meminfo)
-  (let ((lines (read-lines "/proc/meminfo"))
+  (let ((lines (with-input-from-file "/proc/meminfo" read-lines))
         (meminfo (make-meminfo #f #f #f #f #f #f))
         (get-val (lambda (line)
                    (string->number (cadr (string-split line))))))
@@ -134,15 +149,15 @@
 ;;; Battery
 ;;;
 (define (battery-status)
-  (if (file-read-access? "/sys/class/power_supply")
+  (if (file-readable? "/sys/class/power_supply")
       (map (lambda (battery-dir)
              (let* ((status-file (make-pathname battery-dir "status"))
                     (status
-                     (and (file-read-access? status-file)
+                     (and (file-readable? status-file)
                           (with-input-from-file status-file read)))
                     (capacity-file (make-pathname battery-dir "capacity"))
                     (capacity
-                     (and (file-read-access? capacity-file)
+                     (and (file-readable? capacity-file)
                           (with-input-from-file capacity-file read))))
                (cons status capacity)))
            (glob "/sys/class/power_supply/BAT*"))
@@ -154,7 +169,7 @@
 (define-record netdev iface bytes-recv bytes-sent)
 
 (define (parse-netdev)
-  (let ((lines (cddr (read-lines "/proc/net/dev"))))
+  (let ((lines (cddr (with-input-from-file "/proc/net/dev" read-lines))))
     (let loop ((lines lines))
       (if (null? lines)
           '()
