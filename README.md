@@ -12,7 +12,7 @@ accepts a configuration alist via the `conf` keyword parameter.
 
 Usage example:
 
-    (use chickollect extras)
+    (import chickollect (chicken pretty-print))
 
     (collect-loop pp)
 
