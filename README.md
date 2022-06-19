@@ -28,8 +28,7 @@ second:
           0.300917171452537
           1.02536154084379
           0.349054889515253)
-     (date . "2015-09-05")
-     (time . "18:19:33")
+     (date/time . "18:19:33 2015-09-05")
      (battery (Full . 100))
      (network (eth0 0 0) (wlan0 0 0) (lo 0 0)))
 
@@ -38,8 +37,7 @@ second:
 
     ((memory <RAM used> . <swap used>)
      (cpu <CPU0 usage> ...)
-     (date . <yyyy-mm-dd>)
-     (time . <hh:mm:ss>)
+     (date/time . <hh:mm:ss yyyy-mm-dd>)
      (battery (<state> . <capacity>) ...)
      (network (<dev> <download> <upload>) ...))
 
@@ -97,7 +95,8 @@ A list of `(<dev> <bytes sent> <bytes received>)`, where:
 
 * `time-format`: a string to be given to `time->string`.  Default: `"%T"`.
 
-* `date-format`: a string to be given to `time->string`.  Default: `"%F"`.
+* `date/time-format`: a string to be given to `time->string`.
+  Default: `"%T %F"`.
 
 * `collect-interval`: an integer that specifies the time (in seconds)
   between two collections.  Default: `1`.

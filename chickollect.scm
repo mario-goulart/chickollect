@@ -208,11 +208,10 @@
 ;;;
 ;;; Collect loop
 ;;;
-(define (collect-loop handler #!key (time-format "%T")
-                                    (date-format "%F")
+(define (collect-loop handler #!key (date/time-format "%T %F")
                                     (collect-interval 1)
                                     (monitors
-                                     '(memory cpu date time battery network)))
+                                     '(memory cpu date/time battery network)))
   (let loop ()
     (let ((data
            (let loop-monitors ((monitors monitors))
@@ -224,10 +223,8 @@
                           (case monitor
                             ((memory)
                              (memory-in-use (parse-meminfo)))
-                            ((date)
-                             (time->string (seconds->local-time) date-format))
-                            ((time)
-                             (time->string (seconds->local-time) time-format))
+                            ((date/time)
+                             (time->string (seconds->local-time) date/time-format))
                             ((cpu)
                              (cpus-usage))
                             ((battery)
