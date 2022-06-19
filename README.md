@@ -72,7 +72,8 @@ A string `"hh:mm:ss"`.
 A list of pairs `(<state> . <capacity>)`
 
 * `<state>`: a symbol or `#f` (no battery connected).  If it is a
-  symbol, it is one of `Charging`, `Discharging` or `Full`.
+  symbol, it is one of `Charging`, `Discharging`, `Full` or `Unknown`
+  (the values depend on the values informed by the kernel).
 
 * `<capacity>`: a number (percentage) or `#f` (no battery connected).
 
