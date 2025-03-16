@@ -6,4 +6,6 @@
  (license "BSD")
  (platform linux)
  (dependencies srfi-1)
+ (component-options
+  (csc-options "-O3" "-d1"))
  (components (extension chickollect)))
