@@ -77,22 +77,21 @@
            (prevent-0 cur-total)))))
 
 (define (parse-cpu-stat!)
-  (let ((stat-data (with-input-from-file "/proc/stat" read-lines)))
-    (let loop ((cpuno 0)
-               (lines stat-data))
-      (unless (or (fx> cpuno num-cpus)
-                  (null? lines))
-        (let ((line (car lines)))
-          (if (string-prefix? (conc "cpu" cpuno) line)
-              (let ((prev (let ((p (vector-ref cpu-stats cpuno)))
-                            (and p (cdr p))))
-                    (cur (apply make-cpu-stat
-                                (map string->number
-                                     (cdr (string-split line))))))
-                (vector-set! cpu-stats cpuno (cons prev cur))
-                (loop (fx+ cpuno 1) (cdr lines)))
-              (loop cpuno (cdr lines))))))))
-
+  (with-input-from-file "/proc/stat"
+    (lambda ()
+      (let loop ((cpuno 0))
+        (let ((line (read-line)))
+          (unless (or (fx> cpuno num-cpus)
+                      (eof-object? line))
+            (if (string-prefix? (conc "cpu" cpuno) line)
+                (let ((prev (let ((p (vector-ref cpu-stats cpuno)))
+                              (and p (cdr p))))
+                      (cur (apply make-cpu-stat
+                                  (map string->number
+                                       (cdr (string-split line))))))
+                  (vector-set! cpu-stats cpuno (cons prev cur))
+                  (loop (fx+ cpuno 1)))
+                (loop cpuno))))))))
 
 (define (cpus-usage)
   (parse-cpu-stat!)
@@ -112,28 +111,30 @@
 (define-record meminfo total free buffers cached swap-total swap-free)
 
 (define (parse-meminfo)
-  (let ((lines (with-input-from-file "/proc/meminfo" read-lines))
-        (meminfo (make-meminfo #f #f #f #f #f #f))
-        (get-val (lambda (line)
-                   (string->number (cadr (string-split line))))))
-    (for-each
-     (lambda (line)
-       (cond ((string-prefix? "MemTotal:" line)
-              (meminfo-total-set! meminfo (get-val line)))
-             ((string-prefix? "MemFree:" line)
-              (meminfo-free-set! meminfo (get-val line)))
-             ((string-prefix? "Buffers:" line)
-              (meminfo-buffers-set! meminfo (get-val line)))
-             ((string-prefix? "Cached:" line)
-              (meminfo-cached-set! meminfo (get-val line)))
-             ((string-prefix? "Cached:" line)
-              (meminfo-cached-set! meminfo (get-val line)))
-             ((string-prefix? "SwapTotal:" line)
-              (meminfo-swap-total-set! meminfo (get-val line)))
-             ((string-prefix? "SwapFree:" line)
-              (meminfo-swap-free-set! meminfo (get-val line)))))
-     lines)
-    meminfo))
+  (with-input-from-file "/proc/meminfo"
+    (lambda ()
+      (let ((meminfo (make-meminfo #f #f #f #f #f #f))
+            (get-val (lambda (line)
+                       (string->number (cadr (string-split line))))))
+        (let loop ()
+          (let ((line (read-line)))
+            (unless (eof-object? line)
+              (cond ((string-prefix? "MemTotal:" line)
+                     (meminfo-total-set! meminfo (get-val line)))
+                    ((string-prefix? "MemFree:" line)
+                     (meminfo-free-set! meminfo (get-val line)))
+                    ((string-prefix? "Buffers:" line)
+                     (meminfo-buffers-set! meminfo (get-val line)))
+                    ((string-prefix? "Cached:" line)
+                     (meminfo-cached-set! meminfo (get-val line)))
+                    ((string-prefix? "Cached:" line)
+                     (meminfo-cached-set! meminfo (get-val line)))
+                    ((string-prefix? "SwapTotal:" line)
+                     (meminfo-swap-total-set! meminfo (get-val line)))
+                    ((string-prefix? "SwapFree:" line)
+                     (meminfo-swap-free-set! meminfo (get-val line))))
+              (loop))))
+        meminfo))))
 
 (define (memory-in-use meminfo)
   ;; Return the percentages of RAM and swap in use as a pair (<ram> . <swap>)
@@ -174,19 +175,23 @@
 (define-record netdev iface bytes-recv bytes-sent)
 
 (define (parse-netdev)
-  (let ((lines (cddr (with-input-from-file "/proc/net/dev" read-lines))))
-    (let loop ((lines lines))
-      (if (null? lines)
-          '()
-          (let* ((line (car lines))
-                 (tokens (list->vector (string-split line))))
-            (cons (make-netdev
-                   (let ((iface (vector-ref tokens 0)))
-                     (string->symbol
-                      (substring iface 0 (fx- (string-length iface) 1))))
-                   (string->number (vector-ref tokens 1))  ;; bytes received
-                   (string->number (vector-ref tokens 9))) ;; bytes transmitted
-                  (loop (cdr lines))))))))
+  (with-input-from-file "/proc/net/dev"
+    (lambda ()
+      ;; Skip the two first lines
+      (read-line)
+      (read-line)
+      (let loop ()
+        (let ((line (read-line)))
+          (if (eof-object? line)
+              '()
+              (let ((tokens (list->vector (string-split line))))
+                (cons (make-netdev
+                       (let ((iface (vector-ref tokens 0)))
+                         (string->symbol
+                          (substring iface 0 (fx- (string-length iface) 1))))
+                       (string->number (vector-ref tokens 1))  ;; bytes received
+                       (string->number (vector-ref tokens 9))) ;; bytes transmitted
+                      (loop)))))))))
 
 (define prev-netdev-stats #f)
 
