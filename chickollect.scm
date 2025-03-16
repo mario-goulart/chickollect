@@ -57,6 +57,11 @@
      (cpu-stat-irq stat)
      (cpu-stat-steal stat)))
 
+(define-inline (prevent-0 val)
+  (if (fx= 0 val)
+      1
+      val))
+
 (define (cpu-usage prev stat)
   (if prev
       (let* ((cur-idle (cpu-idle stat))
@@ -65,11 +70,11 @@
              (prev-total (fx+ prev-idle (cpu-nonidle prev))))
         (/ (fx- (fx- cur-total prev-total)
                 (fx- cur-idle prev-idle))
-           (fx- cur-total prev-total)))
+           (prevent-0 (fx- cur-total prev-total))))
       (let* ((cur-idle (cpu-idle stat))
              (cur-total (fx+ cur-idle (cpu-nonidle stat))))
         (/ (fx- cur-total cur-idle)
-           cur-total))))
+           (prevent-0 cur-total)))))
 
 (define (parse-cpu-stat!)
   (let ((stat-data (with-input-from-file "/proc/stat" read-lines)))
@@ -187,6 +192,7 @@
 
 (define (netdev-stats collect-interval)
   (let* ((stats (parse-netdev))
+         (interval (prevent-0 collect-interval))
          (diff-stats
           (if prev-netdev-stats
               (map (lambda (prev cur)
@@ -194,10 +200,10 @@
                      (list (netdev-iface cur)
                            (/ (- (netdev-bytes-recv cur)
                                  (netdev-bytes-recv prev))
-                              collect-interval)
+                              interval)
                            (/ (- (netdev-bytes-sent cur)
                                  (netdev-bytes-sent prev))
-                              collect-interval)))
+                              interval)))
                    prev-netdev-stats stats)
               (map (lambda (cur)
                      (list (netdev-iface cur) 0 0))
